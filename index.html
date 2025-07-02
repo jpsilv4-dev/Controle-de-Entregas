@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <title>Controle de Entregas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/png" href="assets/android-chrome-512x512.png">
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: Arial, sans-serif;
@@ -24,9 +21,7 @@
       color: #333;
     }
 
-    form,
-    .stats,
-    .entregas {
+    form, .stats, .entregas {
       background: #fff;
       padding: 20px;
       border-radius: 12px;
@@ -69,14 +64,12 @@
       background-color: #218838;
     }
 
-    .stats h2,
-    .entregas h2 {
+    .stats h2, .entregas h2 {
       margin-top: 0;
       color: #444;
     }
 
-    .stats p,
-    .entrega {
+    .stats p, .entrega {
       font-size: 16px;
       margin: 8px 0;
     }
@@ -108,9 +101,25 @@
     .delete-btn:hover {
       color: #a50000;
     }
+
+    #toast {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      z-index: 9999;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
   </style>
 </head>
-
 <body>
 
   <h1>Controle de Entregas</h1>
@@ -146,12 +155,35 @@
     <div id="listaEntregas"></div>
   </div>
 
+  <!-- Toast -->
+  <div id="toast"></div>
+
   <script>
     const form = document.getElementById('entregaForm');
     const totalEntregasEl = document.getElementById('totalEntregas');
     const valorTotalEl = document.getElementById('valorTotal');
     const kmTotalEl = document.getElementById('kmTotal');
     const listaEntregasEl = document.getElementById('listaEntregas');
+
+    function formatarDataBR(dataISO) {
+      const [ano, mes, dia] = dataISO.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function mostrarToast(mensagem) {
+      const toast = document.getElementById("toast");
+      toast.textContent = mensagem;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.opacity = 1;
+        setTimeout(() => {
+          toast.style.opacity = 0;
+          setTimeout(() => {
+            toast.style.display = "none";
+          }, 300);
+        }, 2000);
+      }, 10);
+    }
 
     function atualizarEstatisticas() {
       const entregas = JSON.parse(localStorage.getItem('entregas')) || [];
@@ -164,14 +196,13 @@
       valorTotalEl.textContent = valorTotal.toFixed(2);
       kmTotalEl.textContent = kmTotal;
 
-      // Mostrar lista de entregas
       listaEntregasEl.innerHTML = '';
-      entregas.reverse().forEach((e, index) => {
+      entregas.slice().reverse().forEach((e, index) => {
         const div = document.createElement('div');
         div.className = 'entrega';
         div.innerHTML = `
           <button class="delete-btn" onclick="deletarEntrega(${entregas.length - 1 - index})">🗑️</button>
-          <strong>Data:</strong> ${e.data}
+          <strong>Data:</strong> ${formatarDataBR(e.data)}
           <strong>Endereço:</strong> ${e.endereco}
           <strong>Valor:</strong> R$ ${e.valor.toFixed(2)}
           <strong>KM Rodado:</strong> ${e.kmFinal - e.kmInicial} km
@@ -181,9 +212,13 @@
     }
 
     function deletarEntrega(index) {
+      const confirmacao = confirm('Tem certeza que deseja excluir esta entrega?');
+      if (!confirmacao) return;
+
       let entregas = JSON.parse(localStorage.getItem('entregas')) || [];
       entregas.splice(index, 1);
       localStorage.setItem('entregas', JSON.stringify(entregas));
+      mostrarToast('Entrega excluída com sucesso!');
       atualizarEstatisticas();
     }
 
@@ -216,7 +251,5 @@
         .catch(err => console.error('Erro ao registrar SW:', err));
     }
   </script>
-
 </body>
-
 </html>
